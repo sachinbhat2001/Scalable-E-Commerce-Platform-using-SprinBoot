@@ -16,10 +16,10 @@ import java.util.Map;
 public class UserController {
     private final UserRepository userRepository;
     private final JwtTokenService jwtTokenService;
-//    public UserController(UserRepository userRepository, JwtTokenService jwtTokenService) {
-//        this.userRepository = userRepository;
-//        this.jwtTokenService = jwtTokenService;
-//    }
+    public UserController(UserRepository userRepository, JwtTokenService jwtTokenService) {
+        this.userRepository = userRepository;
+        this.jwtTokenService = jwtTokenService;
+    }
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @PostMapping("/register")

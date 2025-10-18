@@ -35,7 +35,7 @@ public class OrderServiceImpl implements OrderService{
 		orderEntity.setUserId(orderDto.getUserId());
 		orderEntity.setTotalAmount(orderDto.getTotalAmount());
 		orderEntity.setStatus(orderDto.getStatus());
-		orderEntity.setCreatedAt(orderDto.getCreatedAt());
+		orderEntity.setCreatedAt(LocalDateTime.now());
 		
 		List<OrderItemEntity> itemEntities = orderDto.getItems().stream().map(itemDTO -> {
 	        OrderItemEntity itemEntity = new OrderItemEntity();
@@ -49,8 +49,9 @@ public class OrderServiceImpl implements OrderService{
 	    }).collect(Collectors.toList());
 
 	    orderEntity.setItems(itemEntities);
+	    
+	    orderRepository.save(orderEntity);
 
-	    return;
 	}
     
 	

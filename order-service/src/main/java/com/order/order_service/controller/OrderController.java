@@ -28,3 +28,17 @@ public class OrderController {
 	
 	
 }
+/*
+ 
+ ecommerce-platform/
+├── docker-compose.yml
+├── api-gateway/
+├── service-discovery/
+├── user-service/
+├── product-service/
+├── cart-service/
+├── order-service/
+├── payment-service/
+├── notification-service/
+└── shared/
+*/

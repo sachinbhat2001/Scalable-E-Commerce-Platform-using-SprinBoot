@@ -2,11 +2,13 @@ package com.order.order_service.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import com.order.order_service.model.OrderDTO;
@@ -25,8 +27,17 @@ public class OrderController {
 		orderService.processOrder(orderDto);
 		return "Order is Ready to be Placed";
 	}
+	@GetMapping("/orderDetails/{userID}")
+	public ResponseEntity<OrderDTO> orderDetails(@PathVariable Long userID){
+		OrderDTO dto = orderService.orderDetails(userID);
+		return ResponseEntity.ok(dto);
+	}
 	
-	
+	 @PutMapping("/{orderId}/ready")
+	    public ResponseEntity<OrderDTO> markOrderReady(@PathVariable Long orderId) {
+	        OrderDTO updatedOrder = orderService.updateOrderStatus(orderId, "READY");
+	        return ResponseEntity.ok(updatedOrder);
+	    }
 }
 /*
  

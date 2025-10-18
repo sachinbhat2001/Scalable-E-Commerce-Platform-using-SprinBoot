@@ -14,6 +14,7 @@ import org.springframework.stereotype.*;
 
 import com.order.order_service.model.OrderDTO;
 import com.order.order_service.model.OrderEntity;
+import com.order.order_service.model.OrderItemDTO;
 import com.order.order_service.model.OrderItemEntity;
 import com.order.order_service.repository.OrderRepository;
 
@@ -25,6 +26,8 @@ public class OrderServiceImpl implements OrderService{
     
     @Autowired
     private RabbitTemplate rabbitTemplate;
+
+    private OrderDTO orderDto;
 
 	@Override
 	public void processOrder(OrderDTO orderDto) {
@@ -53,7 +56,71 @@ public class OrderServiceImpl implements OrderService{
 	    orderRepository.save(orderEntity);
 
 	}
-    
+
+	@Override
+	public OrderDTO orderDetails(Long userID) {
+		List<OrderEntity> orderEntities = orderRepository.findOrdersWithItemsByUserId(userID);
+
+	    if (orderEntities.isEmpty()) {
+	        throw new RuntimeException("No orders found for userId: " + userID);
+	    }
+
+	    // Assuming you want the latest order or first order
+	    OrderEntity orderEntity = orderEntities.get(0);
+
+	    // Convert OrderEntity -> OrderDTO
+	    OrderDTO orderDto = new OrderDTO();
+	    orderDto.setUserId(orderEntity.getUserId());
+	    orderDto.setTotalAmount(orderEntity.getTotalAmount());
+	    orderDto.setStatus(orderEntity.getStatus());
+	    orderDto.setCreatedAt(orderEntity.getCreatedAt());
+
+	    List<OrderItemDTO> items = orderEntity.getItems().stream().map(item -> {
+	        OrderItemDTO dto = new OrderItemDTO();
+	        dto.setProductId(item.getProductId());
+	        dto.setProductName(item.getProductName());
+	        dto.setQuantity(item.getQuantity());
+	        dto.setUnitPrice(item.getUnitPrice());
+	        dto.setTotalPrice(item.getTotalPrice());
+	        return dto;
+	    }).collect(Collectors.toList());
+
+	    orderDto.setItems(items);
+	    return orderDto;
+	}
+	@Override
+    public OrderDTO updateOrderStatus(Long orderId, String status) {
+        OrderEntity order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+
+        // Update status
+        order.setStatus(status);
+
+        // Save updated entity
+        OrderEntity updatedOrder = orderRepository.save(order);
+
+        // Convert Entity → DTO to return
+        OrderDTO orderDto = new OrderDTO();
+        orderDto.setUserId(updatedOrder.getUserId());
+        orderDto.setTotalAmount(updatedOrder.getTotalAmount());
+        orderDto.setStatus(updatedOrder.getStatus());
+        orderDto.setCreatedAt(updatedOrder.getCreatedAt());
+
+        // Convert Order Items
+        List<OrderItemDTO> items = updatedOrder.getItems().stream().map(item -> {
+            OrderItemDTO itemDto = new OrderItemDTO();
+            itemDto.setProductId(item.getProductId());
+            itemDto.setProductName(item.getProductName());
+            itemDto.setQuantity(item.getQuantity());
+            itemDto.setUnitPrice(item.getUnitPrice());
+            itemDto.setTotalPrice(item.getTotalPrice());
+            return itemDto;
+        }).collect(Collectors.toList());
+
+        orderDto.setItems(items);
+
+        return orderDto;
+    }
 	
 //	@RabbitListener(queues = "order.queue")
 //    public void handleOrderCreation(OrderEvent orderEvent) {

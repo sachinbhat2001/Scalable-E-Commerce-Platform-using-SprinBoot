@@ -9,4 +9,6 @@ import com.order.order_service.repository.OrderRepository;
 public interface OrderService {
 	
 	void processOrder(OrderDTO orderDto);
+	OrderDTO orderDetails(Long userId);
+	OrderDTO updateOrderStatus(Long orderId, String status);
 }

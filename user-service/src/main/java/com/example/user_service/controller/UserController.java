@@ -1,61 +1,91 @@
 package com.example.user_service.controller;
 
-import com.example.user_service.JwtService.JwtTokenService;
-import com.example.user_service.entity.User;
-import com.example.user_service.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import com.example.user_service.entity.UserDTO;
+import com.example.user_service.service.UserService;
 
 @RestController
 @RequestMapping("/api/users")
-@RequiredArgsConstructor
 public class UserController {
-    private final UserRepository userRepository;
-    private final JwtTokenService jwtTokenService;
-    public UserController(UserRepository userRepository, JwtTokenService jwtTokenService) {
-        this.userRepository = userRepository;
-        this.jwtTokenService = jwtTokenService;
-    }
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, String> payload){
-        String email = payload.get("email");
-        String password = payload.get("password");
-        String fullName = payload.get("fullName");
-        System.out.println("Register payload: " + payload);
-        if (userRepository.findByEmail(email).isPresent()) {
-            return ResponseEntity.status(409).body("Email already exists");
+    @Autowired
+    private UserService userService;
+
+    @PostMapping
+    public ResponseEntity<?> createUser(@RequestBody UserDTO userDTO) {
+        try {
+            UserDTO createdUser = userService.createUser(userDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        User user = User.builder()
-                .email(email)
-                .passwordHash(passwordEncoder.encode(password))
-                .fullName(fullName)
-                .build();
-        userRepository.save(user);
-
-        return(ResponseEntity.ok(Map.of("id", user.getId()))) ;
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> payload){
-
-        String email = payload.get("email");
-        String password = payload.get("password");
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
-
-        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            return ResponseEntity.status(401).body("Invalid credentials");
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) { // Changed to Long
+        try {
+            UserDTO user = userService.getUserById(id);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
+    }
 
-        String token = jwtTokenService.generateToken(user.getId(), user.getEmail());
-        return ResponseEntity.ok(Map.of("token", token));
+    @GetMapping("/username/{username}")
+    public ResponseEntity<?> getUserByUsername(@PathVariable String username) {
+        try {
+            UserDTO user = userService.getUserByUsername(username);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
 
+    @GetMapping("/email/{email}")
+    public ResponseEntity<?> getUserByEmail(@PathVariable String email) {
+        try {
+            UserDTO user = userService.getUserByEmail(email);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        List<UserDTO> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) { // Changed to Long
+        try {
+            UserDTO updatedUser = userService.updateUser(id, userDTO);
+            return ResponseEntity.ok(updatedUser);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) { // Changed to Long
+        try {
+            userService.deleteUser(id);
+            return ResponseEntity.ok("User deleted successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/exists")
+    public ResponseEntity<Boolean> checkUserExists(@PathVariable Long id) { // Changed to Long
+        boolean exists = userService.userExists(id);
+        return ResponseEntity.ok(exists);
     }
 }

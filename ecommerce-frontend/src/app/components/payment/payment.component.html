@@ -1,0 +1,182 @@
+<div class="container">
+  <h2>Payment Management</h2>
+
+  <div class="alert" [class]="serviceHealth === 'Healthy' ? 'alert-success' : 'alert-danger'">
+    Payment Service Status: <strong>{{ serviceHealth }}</strong>
+    <button class="btn btn-sm btn-outline-secondary ms-2" (click)="checkServiceHealth()">
+      Refresh Status
+    </button>
+    <button class="btn btn-sm btn-outline-info ms-1" (click)="testRabbitMQ()">
+      Test RabbitMQ
+    </button>
+  </div>
+
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a class="nav-link" [class.active]="activeTab === 'process'" 
+         (click)="setActiveTab('process')">Process Payment</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" [class.active]="activeTab === 'details'" 
+         (click)="setActiveTab('details')">Payment Details</a>
+    </li>
+  </ul>
+
+  <!-- Process Payment Tab -->
+  <div *ngIf="activeTab === 'process'" class="tab-content">
+    <div class="row">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header">Process Payment</div>
+          <div class="card-body">
+            <!-- Payment Form -->
+            <div class="mb-3">
+              <label class="form-label">Order ID</label>
+              <input type="number" class="form-control" 
+                     [(ngModel)]="paymentRequest.orderId"
+                     placeholder="Enter Order ID"
+                     required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Amount</label>
+              <input type="number" class="form-control" 
+                     [(ngModel)]="paymentRequest.amount"
+                     placeholder="Enter Amount"
+                     step="0.01"
+                     required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Payment Method</label>
+              <select class="form-select" [(ngModel)]="paymentRequest.paymentMethod">
+                <option value="CREDIT_CARD">Credit Card</option>
+                <option value="DEBIT_CARD">Debit Card</option>
+                <option value="PAYPAL">PayPal</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+              </select>
+            </div>
+
+            <!-- Credit Card Details -->
+            <div *ngIf="paymentRequest.paymentMethod === 'CREDIT_CARD' || paymentRequest.paymentMethod === 'DEBIT_CARD'">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Card Number</label>
+                  <input type="text" class="form-control" 
+                         [(ngModel)]="paymentRequest.cardNumber"
+                         placeholder="1234 5678 9012 3456"
+                         maxlength="19">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Expiry Date</label>
+                  <input type="text" class="form-control" 
+                         [(ngModel)]="paymentRequest.expiryDate"
+                         placeholder="MM/YY"
+                         maxlength="5">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">CVV</label>
+                  <input type="text" class="form-control" 
+                         [(ngModel)]="paymentRequest.cvv"
+                         placeholder="123"
+                         maxlength="3">
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Cardholder Name</label>
+                <input type="text" class="form-control" 
+                       [(ngModel)]="paymentRequest.cardHolderName"
+                       placeholder="John Doe">
+              </div>
+            </div>
+
+            <!-- PayPal Notice -->
+            <div *ngIf="paymentRequest.paymentMethod === 'PAYPAL'" class="alert alert-warning">
+              You will be redirected to PayPal to complete your payment.
+            </div>
+
+            <!-- Bank Transfer Notice -->
+            <div *ngIf="paymentRequest.paymentMethod === 'BANK_TRANSFER'" class="alert alert-info">
+              Please use the following bank details for transfer:
+              <br>
+              Account: 1234 5678 9012
+              <br>
+              Routing: 021000021
+            </div>
+
+            <button class="btn btn-primary" 
+                    (click)="processPayment()"
+                    [disabled]="isProcessing || !paymentRequest.orderId || !paymentRequest.amount">
+              {{ isProcessing ? 'Processing...' : 'Process Payment' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Response -->
+      <div class="col-md-4" *ngIf="paymentResponse">
+        <div class="card">
+          <div class="card-header">Payment Response</div>
+          <div class="card-body">
+            <div [class]="'alert ' + (paymentResponse.status === 'SUCCESS' ? 'alert-success' : 'alert-danger')">
+              <strong>Status: {{ paymentResponse.status }}</strong>
+            </div>
+            <p *ngIf="paymentResponse.paymentId"><strong>Payment ID:</strong> {{ paymentResponse.paymentId }}</p>
+            <p *ngIf="paymentResponse.transactionDate">
+              <strong>Date:</strong> {{ paymentResponse.transactionDate | date:'medium' }}
+            </p>
+            <p *ngIf="paymentResponse.message"><strong>Message:</strong> {{ paymentResponse.message }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Details Tab -->
+  <div *ngIf="activeTab === 'details'" class="tab-content">
+    <h4>Payment Details</h4>
+    
+    <div class="mb-3">
+      <div class="row">
+        <div class="col-md-6">
+          <input type="number" class="form-control" placeholder="Payment ID" #paymentIdInput>
+          <button class="btn btn-info mt-2" 
+                  (click)="getPaymentById(+paymentIdInput.value)">
+            Find by Payment ID
+          </button>
+        </div>
+        <div class="col-md-6">
+          <input type="number" class="form-control" placeholder="Order ID" #orderIdInput>
+          <button class="btn btn-info mt-2" 
+                  (click)="getPaymentByOrderId(+orderIdInput.value)">
+            Find by Order ID
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="paymentResponse" class="card">
+      <div class="card-header">
+        Payment Details
+        <span [class]="'badge ' + getStatusBadgeClass(paymentResponse.status)" class="ms-2">
+          {{ paymentResponse.status }}
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Payment ID:</strong> {{ paymentResponse.paymentId || 'N/A' }}</p>
+            <p><strong>Order ID:</strong> {{ paymentResponse.orderId || 'N/A' }}</p>
+            <p><strong>User ID:</strong> {{ paymentResponse.userId || 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Amount:</strong> ${{ paymentResponse.amount || 'N/A' }}</p>
+            <p><strong>Method:</strong> {{ paymentResponse.paymentMethod || 'N/A' }}</p>
+            <p><strong>Date:</strong> {{ paymentResponse.transactionDate | date:'medium' }}</p>
+          </div>
+        </div>
+        <p *ngIf="paymentResponse.message"><strong>Message:</strong> {{ paymentResponse.message }}</p>
+      </div>
+    </div>
+  </div>
+</div>

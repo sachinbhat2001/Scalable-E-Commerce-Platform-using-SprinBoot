@@ -1,0 +1,176 @@
+<div class="container">
+  <h2>Order Management</h2>
+
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a class="nav-link" [class.active]="activeTab === 'my-orders'" 
+         (click)="setActiveTab('my-orders')">My Orders</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" [class.active]="activeTab === 'create'" 
+         (click)="setActiveTab('create')">Create Order</a>
+    </li>
+  </ul>
+
+  <!-- My Orders Tab -->
+  <div *ngIf="activeTab === 'my-orders'" class="tab-content">
+    <h4>My Orders</h4>
+    <div *ngIf="userOrders.length === 0" class="alert alert-info">
+      No orders found.
+    </div>
+    <div *ngFor="let order of userOrders" class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Order #{{ order.id }}</span>
+        <span [class]="'badge ' + getStatusBadgeClass(order.status)">
+          {{ order.status }}
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Total Amount:</strong> ${{ order.totalAmount || calculateOrderTotal(order) }}</p>
+            <p><strong>Status:</strong> {{ order.status }}</p>
+            <p><strong>Payment Method:</strong> {{ order.paymentMethod }}</p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Shipping Address:</strong> {{ order.shippingAddress }}</p>
+            <p><strong>Created:</strong> {{ order.createdAt | date:'medium' }}</p>
+          </div>
+        </div>
+        <button class="btn btn-info btn-sm" (click)="viewOrderDetails(order)">
+          View Details
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Order Tab -->
+  <div *ngIf="activeTab === 'create'" class="tab-content">
+    <h4>Create New Order</h4>
+    
+    <div class="card">
+      <div class="card-header">Order Information</div>
+      <div class="card-body">
+        <!-- Cart Items -->
+        <div *ngIf="cart && cart.items.length > 0" class="mb-4">
+          <h5>Order Items (from Cart)</h5>
+          <div *ngFor="let item of cart.items" class="border p-2 mb-2">
+            <div class="row">
+              <div class="col-md-6">
+                <strong>{{ item.productName }}</strong>
+              </div>
+              <div class="col-md-2">Qty: {{ item.quantity }}</div>
+              <div class="col-md-2">${{ item.price }}</div>
+              <div class="col-md-2">Total: ${{ item.price * item.quantity }}</div>
+            </div>
+          </div>
+          <div class="text-end">
+            <strong>Cart Total: ${{ cart.totalPrice }}</strong>
+          </div>
+        </div>
+
+        <div *ngIf="!cart || cart.items.length === 0" class="alert alert-warning">
+          Your cart is empty. Add items to cart before creating an order.
+        </div>
+
+        <!-- Order Form -->
+        <form (ngSubmit)="createOrder()" *ngIf="cart && cart.items.length > 0">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Shipping Address</label>
+              <textarea class="form-control" 
+                        [(ngModel)]="newOrder.shippingAddress" 
+                        name="shippingAddress"
+                        rows="3" 
+                        required></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Payment Method</label>
+              <select class="form-select" 
+                      [(ngModel)]="newOrder.paymentMethod" 
+                      name="paymentMethod">
+                <option value="CREDIT_CARD">Credit Card</option>
+                <option value="DEBIT_CARD">Debit Card</option>
+                <option value="PAYPAL">PayPal</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <p><strong>Total Items:</strong> {{ cart.totalItems }}</p>
+            <p><strong>Total Amount:</strong> ${{ cart.totalPrice }}</p>
+          </div>
+
+          <button type="submit" 
+                  class="btn btn-primary"
+                  [disabled]="isCreatingOrder || !newOrder.shippingAddress">
+            {{ isCreatingOrder ? 'Creating Order...' : 'Create Order' }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Order Details Modal -->
+<div *ngIf="isViewingDetails && currentOrder" class="modal show d-block" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Order #{{ currentOrder.id }} Details</h5>
+        <button type="button" class="btn-close" (click)="closeOrderDetails()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <p><strong>Status:</strong> 
+              <span [class]="'badge ' + getStatusBadgeClass(currentOrder.status)">
+                {{ currentOrder.status }}
+              </span>
+            </p>
+            <p><strong>User ID:</strong> {{ currentOrder.userId }}</p>
+            <p><strong>Total Amount:</strong> ${{ currentOrder.totalAmount || calculateOrderTotal(currentOrder) }}</p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Payment Method:</strong> {{ currentOrder.paymentMethod }}</p>
+            <p><strong>Shipping Address:</strong> {{ currentOrder.shippingAddress }}</p>
+            <p><strong>Created:</strong> {{ currentOrder.createdAt | date:'full' }}</p>
+          </div>
+        </div>
+
+        <h6>Order Items</h6>
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of currentOrder.items">
+                <td>{{ item.productName }}</td>
+                <td>${{ item.price }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ item.price * item.quantity }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
+                <td><strong>${{ currentOrder.totalAmount || calculateOrderTotal(currentOrder) }}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeOrderDetails()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div *ngIf="isViewingDetails" class="modal-backdrop show"></div>

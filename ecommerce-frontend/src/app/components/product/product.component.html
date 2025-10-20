@@ -1,0 +1,67 @@
+<div class="container">
+  <h2>Product Management</h2>
+  
+  <div class="card mb-4">
+    <div class="card-header">Create Product</div>
+    <div class="card-body">
+      <form (ngSubmit)="createProduct()">
+        <div class="row">
+          <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="Product Name" 
+                   [(ngModel)]="selectedProduct.name" name="name" required>
+          </div>
+          <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="Category" 
+                   [(ngModel)]="selectedProduct.category" name="category" required>
+          </div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-md-12">
+            <textarea class="form-control" placeholder="Description" 
+                      [(ngModel)]="selectedProduct.description" name="description" required></textarea>
+          </div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-md-4">
+            <input type="number" class="form-control" placeholder="Price" 
+                   [(ngModel)]="selectedProduct.price" name="price" required>
+          </div>
+          <div class="col-md-4">
+            <input type="number" class="form-control" placeholder="Stock Quantity" 
+                   [(ngModel)]="selectedProduct.stockQuantity" name="stockQuantity" required>
+          </div>
+          <div class="col-md-4">
+            <input type="text" class="form-control" placeholder="Image URL" 
+                   [(ngModel)]="selectedProduct.imageUrl" name="imageUrl">
+          </div>
+        </div>
+        <div class="mt-2">
+          <button type="submit" class="btn btn-primary">Create Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Products List</div>
+    <div class="card-body">
+      <div class="row">
+        <div *ngFor="let product of products" class="col-md-4 mb-3">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">{{ product.name }}</h5>
+              <p class="card-text">{{ product.description }}</p>
+              <p><strong>Price:</strong> ${{ product.price }}</p>
+              <p><strong>Stock:</strong> {{ product.stockQuantity }}</p>
+              <p><strong>Category:</strong> {{ product.category }}</p>
+              <button class="btn btn-warning btn-sm" 
+                      (click)="updateStock(product.id!, product.stockQuantity + 1)">
+                Add Stock
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

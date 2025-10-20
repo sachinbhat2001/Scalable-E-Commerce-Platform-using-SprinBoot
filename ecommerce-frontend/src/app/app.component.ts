@@ -1,0 +1,30 @@
+import { Component } from '@angular/core';
+import { RouterOutlet, RouterLink } from '@angular/router';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [CommonModule, RouterOutlet, RouterLink],
+  template: `
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
+        <a class="navbar-brand" routerLink="/">{{ title }}</a>
+        <div class="navbar-nav">
+          <a class="nav-link" routerLink="/users">Users</a>
+          <a class="nav-link" routerLink="/products">Products</a>
+          <a class="nav-link" routerLink="/cart">Cart</a>
+          <a class="nav-link" routerLink="/orders">Orders</a>
+          <a class="nav-link" routerLink="/payments">Payments</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mt-4">
+      <router-outlet></router-outlet>
+    </div>
+  `
+})
+export class AppComponent {
+  title = 'E-Commerce Frontend';
+}

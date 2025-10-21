@@ -1,12 +1,11 @@
 package com.payment.payment_service.rabbitmq;
+
 import com.payment.payment_service.entity.PaymentSuccessMessageDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import static com.payment.payment_service.config.RabbitMQConfig.PAYMENT_EXCHANGE;
-import static com.payment.payment_service.config.RabbitMQConfig.PAYMENT_ROUTING_KEY;
 
 @Service
 @RequiredArgsConstructor
@@ -15,12 +14,24 @@ public class RabbitMQProducer {
 
     private final RabbitTemplate rabbitTemplate;
 
+    @Value("${rabbitmq.exchange.name:payment_exchange}")
+    private String exchangeName;
+
+    @Value("${rabbitmq.routing.key:payment.success}")
+    private String routingKey;
+
     public void sendPaymentSuccessMessage(PaymentSuccessMessageDTO message) {
         try {
-            rabbitTemplate.convertAndSend(PAYMENT_EXCHANGE, PAYMENT_ROUTING_KEY, message);
-            log.info("Payment success message sent: {}", message);
+            log.info("🟡 RABBITMQ: Sending payment success message for order: {}", message.getOrderId());
+            
+            rabbitTemplate.convertAndSend(exchangeName, routingKey, message);
+            
+            log.info("✅ RABBITMQ: Payment success message sent for order: {}", message.getOrderId());
+            log.info("✅ RABBITMQ: Message details: {}", message);
+            
         } catch (Exception e) {
-            log.error("Failed to send payment success message: {}", e.getMessage());
+            log.error("❌ RABBITMQ: Failed to send payment success message for order {}: {}", 
+                     message.getOrderId(), e.getMessage());
             throw new RuntimeException("Failed to send RabbitMQ message", e);
         }
     }

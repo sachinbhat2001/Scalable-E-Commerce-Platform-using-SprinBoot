@@ -201,6 +201,9 @@ public class OrderServiceImpl implements OrderService{
 	    // Method 2: Complex method with JOIN FETCH
 	    List<OrderEntity> orders2 = orderRepository.findOrdersWithItemsByUserId(userId);
 	    System.out.println("2. findOrdersWithItemsByUserId found: " + orders2.size() + " orders");
+
+
+	    
 	    
 	    // Method 3: Get ALL orders to see what's in the database
 	    List<OrderEntity> allOrders = orderRepository.findAll();
@@ -221,8 +224,7 @@ public class OrderServiceImpl implements OrderService{
 	    }
 	    
 	    // Use the method that works
-	    List<OrderEntity> orderEntities = orders2.isEmpty() ? orders1 : orders2;
-	    
+	    List<OrderEntity> orderEntities = orderRepository.findOrdersWithItemsByUserIdOrderByCreatedAtDesc(userId);
 	    List<OrderDTO> dtos = orderEntities.stream()
 	            .map(this::convertToDTO)
 	            .collect(Collectors.toList());

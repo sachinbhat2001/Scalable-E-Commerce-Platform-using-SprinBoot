@@ -18,32 +18,32 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    @Column(nullable = false)
-    private Long userId;
-    
-    @Column(nullable = false)
-    private Long orderId;
-    
-    @Column(nullable = false)
-    private Double amount;
-    
-    @Column(nullable = false)
-    private String status; // SUCCESS, FAILED, PENDING
-    
-    private String paymentMethod;
-    
-    private String transactionId;
-    
-    @Column(nullable = false)
-    private LocalDateTime paymentDate;
-    
-    @PrePersist
-    protected void onCreate() {
-        paymentDate = LocalDateTime.now();
-    }
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	@Column(nullable = false)
+	private Long userId;
+
+	@Column(nullable = false)
+	private Long orderId;
+
+	@Column(nullable = false)
+	private Double amount;
+
+	@Column(nullable = false)
+	private String status; // SUCCESS, FAILED, PENDING
+
+	private String paymentMethod;
+
+	private String transactionId;
+
+	@Column(nullable = false)
+	private LocalDateTime paymentDate;
+
+	@PrePersist
+	protected void onCreate() {
+		paymentDate = LocalDateTime.now();
+	}
 
 }

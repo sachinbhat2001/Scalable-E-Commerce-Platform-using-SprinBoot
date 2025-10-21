@@ -14,6 +14,11 @@ public interface OrderRepository extends JpaRepository<OrderEntity,Long>{
 
 	List<OrderEntity> findByUserId(Long userId);
 	// If you need to fetch orders with items
+	
+	
+	@Query("SELECT o FROM OrderEntity o LEFT JOIN FETCH o.items WHERE o.userId = :userId ORDER BY o.createdAt DESC")
+    List<OrderEntity> findOrdersWithItemsByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
+	
     @Query("SELECT o FROM OrderEntity o LEFT JOIN FETCH o.items WHERE o.userId = :userId")
     List<OrderEntity> findOrdersWithItemsByUserId(@Param("userId") Long userId);
 //    @Query("SELECT o FROM OrderEntity o LEFT JOIN FETCH o.items WHERE o.userId = :userId")

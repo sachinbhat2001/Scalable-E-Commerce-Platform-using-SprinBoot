@@ -94,4 +94,37 @@ public class CartItemEntity {
     @Column(name = "total_price", precision = 19, scale = 2)
     private BigDecimal totalPrice;
 }
-
+//
+//package com.example.cart_service.model;
+//
+//import jakarta.persistence.*;
+//import lombok.Data;
+//import java.math.BigDecimal;
+//
+//@Entity
+//@Table(name = "cart_item")
+//@Data
+//public class CartItemEntity {
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    private Long id;
+//
+//    @Column(name = "product_id", nullable = false)
+//    private Long productId;
+//
+//    @Column(name = "product_name", nullable = false)
+//    private String productName;
+//
+//    @Column(nullable = false)
+//    private Integer quantity;
+//
+//    @Column(name = "unit_price", nullable = false)
+//    private BigDecimal unitPrice = BigDecimal.ZERO; // Default to zero
+//
+//    @Column(name = "total_price", nullable = false)
+//    private BigDecimal totalPrice = BigDecimal.ZERO; // Default to zero
+//
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "cart_id")
+//    private CartEntity cart;
+//}

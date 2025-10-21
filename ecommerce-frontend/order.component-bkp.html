@@ -1,28 +1,16 @@
+
 <div class="container">
   <h2>Order Management</h2>
 
   <!-- Checkout Success Alert -->
   <div *ngIf="checkoutSuccess" class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>
     <strong>Checkout Successful!</strong> Your order has been placed successfully.
     <span *ngIf="recentOrderId">Order ID: #{{ recentOrderId }}</span>
     <button type="button" class="btn-close" (click)="checkoutSuccess = false"></button>
   </div>
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="text-center p-4">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="mt-2">Loading orders...</p>
-  </div>
-
-  <!-- Error State -->
-  <div *ngIf="error && !isLoading" class="alert alert-danger alert-dismissible fade show" role="alert">
-    <strong>Error:</strong> {{ error }}
-    <button type="button" class="btn-close" (click)="error = null"></button>
-  </div>
-
-  <ul class="nav nav-tabs mb-4" *ngIf="!isLoading">
+  <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
       <a class="nav-link" [class.active]="activeTab === 'my-orders'" 
          (click)="setActiveTab('my-orders')">
@@ -39,16 +27,16 @@
   </ul>
 
   <!-- My Orders Tab -->
-  <div *ngIf="activeTab === 'my-orders' && !isLoading" class="tab-content">
+  <div *ngIf="activeTab === 'my-orders'" class="tab-content">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h4>My Orders</h4>
       <button class="btn btn-sm btn-outline-primary" (click)="refreshOrders()">
-        Refresh
+        <i class="bi bi-arrow-clockwise"></i> Refresh
       </button>
     </div>
     
-    <!-- No Orders Message -->
-    <div *ngIf="userOrders.length === 0 && !error" class="alert alert-info">
+    <div *ngIf="userOrders.length === 0" class="alert alert-info">
+      <i class="bi bi-info-circle me-2"></i>
       No orders found. 
       <a href="javascript:void(0)" (click)="setActiveTab('create')" class="alert-link">
         Create your first order
@@ -59,7 +47,6 @@
       </a>.
     </div>
     
-    <!-- Orders List -->
     <div *ngFor="let order of userOrders" class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Order #{{ order.id }}</span>
@@ -79,22 +66,15 @@
             <p><strong>Created:</strong> {{ order.createdAt | date:'medium' }}</p>
           </div>
         </div>
-        <div class="mt-3">
-          <button class="btn btn-info btn-sm me-2" (click)="viewOrderDetails(order)">
-            View Details
-          </button>
-          <button *ngIf="order.status !== 'CANCELLED' && order.status !== 'DELIVERED'" 
-                  class="btn btn-warning btn-sm"
-                  (click)="cancelOrder(order.id!)">
-            Cancel Order
-          </button>
-        </div>
+        <button class="btn btn-info btn-sm" (click)="viewOrderDetails(order)">
+          View Details
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Create Order Tab -->
-  <div *ngIf="activeTab === 'create' && !isLoading" class="tab-content">
+  <div *ngIf="activeTab === 'create'" class="tab-content">
     <h4>Create New Order</h4>
     
     <div class="card">
@@ -182,6 +162,7 @@
             <button type="button" 
                     class="btn btn-outline-secondary"
                     (click)="router.navigate(['/cart'])">
+              <i class="bi bi-cart me-1"></i>
               Back to Cart
             </button>
           </div>
@@ -258,3 +239,4 @@
   </div>
 </div>
 <div *ngIf="isViewingDetails" class="modal-backdrop show"></div>
+

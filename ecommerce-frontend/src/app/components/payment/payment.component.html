@@ -22,6 +22,12 @@
     </li>
   </ul>
 
+  <!-- Order Info Alert -->
+  <div *ngIf="paymentRequest.orderId && paymentRequest.amount" class="alert alert-info mb-3">
+    <strong>Order Details:</strong> 
+    Processing payment for Order #{{ paymentRequest.orderId }} - Amount: ${{ paymentRequest.amount }}
+  </div>
+
   <!-- Process Payment Tab -->
   <div *ngIf="activeTab === 'process'" class="tab-content">
     <div class="row">

@@ -17,7 +17,7 @@ export interface OrderItemDTO {
   productId: number;
   productName: string;
   quantity: number;
-  price: number;
+  unitPrice: number;
   imageUrl?: string;
 }
 

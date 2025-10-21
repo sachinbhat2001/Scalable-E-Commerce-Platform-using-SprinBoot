@@ -1,3 +1,4 @@
+
 // import { Component, OnInit } from '@angular/core';
 // import { CommonModule } from '@angular/common';
 // import { FormsModule } from '@angular/forms';
@@ -40,6 +41,8 @@
   
 //   checkoutSuccess = false;
 //   recentOrderId: number | null = null;
+//   isLoading = true;
+//   error: string | null = null;
 
 //   constructor(
 //     private orderService: OrderService,
@@ -51,30 +54,11 @@
 //   ) { }
 
 //   ngOnInit(): void {
-//     // Automatically load order details when component initializes
-//     this.loadOrderDetails();
+//     this.loadUserData();
     
-//     // Optional: Listen for route changes if needed
 //     this.route.queryParams.subscribe(params => {
 //       if (params['checkoutSuccess']) {
-//         // Refresh order details if coming from checkout
-//         this.loadOrderDetails();
-//       }
-//     });
-//     // this.checkQueryParams();
-//     // this.loadUserData();
-//   }
-
-//   checkQueryParams(): void {
-//     this.route.queryParams.subscribe(params => {
-//       if (params['checkoutSuccess'] === 'true') {
-//         this.checkoutSuccess = true;
-//         this.recentOrderId = params['orderId'] ? Number(params['orderId']) : null;
-//         this.activeTab = 'my-orders';
-//         this.router.navigate([], {
-//           queryParams: {},
-//           replaceUrl: true
-//         });
+//         this.loadUserData();
 //       }
 //     });
 //   }
@@ -82,9 +66,17 @@
 //   loadUserData(): void {
 //     const userId = 1;
     
-//     this.userService.getUserById(userId).subscribe(user => {
-//       this.user = user;
-//       this.newOrder.userId = userId;
+//     this.isLoading = true;
+//     this.error = null;
+
+//     this.userService.getUserById(userId).subscribe({
+//       next: (user) => {
+//         this.user = user;
+//         this.newOrder.userId = userId;
+//       },
+//       error: (error) => {
+//         console.error('Error loading user:', error);
+//       }
 //     });
 
 //     this.loadOrderDetails(userId);
@@ -93,19 +85,24 @@
 
 //   loadOrderDetails(userId: number): void {
 //     this.orderService.getOrderDetails(userId).subscribe({
-//       next: (order) => {
-//         console.log('Order details loaded:', order);
-//         if (order) {
-//           this.userOrders = [order];
-//           this.currentOrder = order;
+//       next: (orders) => {
+//         console.log('Order details loaded:', orders);
+//         this.isLoading = false;
+//         if (orders && orders.length > 0) {
+//           this.userOrders = orders;
+//           this.currentOrder = orders[0];
 //         } else {
 //           this.userOrders = [];
 //           this.currentOrder = null;
+//           this.error = 'No orders found for this user.';
 //         }
 //       },
 //       error: (error) => {
 //         console.error('Error loading order details:', error);
+//         this.isLoading = false;
+//         this.error = 'Failed to load order details: ' + (error.error?.message || error.message || 'Unknown error');
 //         this.userOrders = [];
+//         this.currentOrder = null;
 //       }
 //     });
 //   }
@@ -120,7 +117,7 @@
 //             productId: item.productId,
 //             productName: item.productName,
 //             quantity: item.quantity,
-//             price: item.unitPrice, // Use unitPrice instead of price
+//             unitPrice: item.unitPrice,
 //             imageUrl: item.imageUrl
 //           }));
 //         }
@@ -237,7 +234,7 @@
 //   }
 
 //   calculateOrderTotal(order: OrderDTO): number {
-//     return order.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+//     return order.items.reduce((total, item) => total + (item.unitPrice * item.quantity), 0);
 //   }
 
 //   private resetNewOrderForm(): void {
@@ -286,11 +283,33 @@
 //       });
 //     }
 //   }
+
+//   hasOrders(): boolean {
+//     return this.userOrders.length > 0;
+//   }
+
+//   getLatestOrder(): OrderDTO | null {
+//     return this.userOrders.length > 0 ? this.userOrders[this.userOrders.length - 1] : null;
+//   }
+
+//   getSortedOrders(): OrderDTO[] {
+//     return [...this.userOrders].sort((a, b) => {
+//       // Handle cases where createdAt might be undefined
+//       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+//       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+//       return dateB - dateA; // Descending order (newest first)
+//     });
+//   }
+
+//   getUserOrder(): OrderDTO | null {
+//     return this.userOrders.length > 0 ? this.userOrders[0] : null;
+//   }
 // }
+
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router'; 
 import { OrderService } from '../../services/order.service';
 import { CartService } from '../../services/cart.service';
 import { UserService } from '../../services/user.service';
@@ -302,13 +321,13 @@ import { UserDTO } from '../../models/user.model';
 @Component({
   selector: 'app-order',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './order.component.html'
 })
 export class OrderComponent implements OnInit {
   orders: OrderDTO[] = [];
   currentOrder: OrderDTO | null = null;
-  userOrders: OrderDTO[] = []; // This should contain the single order from backend
+  userOrders: OrderDTO[] = [];
   cart: CartDTO | null = null;
   user: UserDTO | null = null;
   
@@ -342,25 +361,21 @@ export class OrderComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    // Automatically load order details when component initializes
     this.loadUserData();
     
-    // Listen for route changes if needed
     this.route.queryParams.subscribe(params => {
       if (params['checkoutSuccess']) {
-        // Refresh order details if coming from checkout
         this.loadUserData();
       }
     });
   }
 
   loadUserData(): void {
-    const userId = 1; // Hardcoded for now, replace with actual user ID from auth service
+    const userId = 1;
     
     this.isLoading = true;
     this.error = null;
 
-    // Load user data
     this.userService.getUserById(userId).subscribe({
       next: (user) => {
         this.user = user;
@@ -371,10 +386,7 @@ export class OrderComponent implements OnInit {
       }
     });
 
-    // Load order details - this is the main call that happens automatically
     this.loadOrderDetails(userId);
-    
-    // Load cart data
     this.loadCart(userId);
   }
 
@@ -384,24 +396,13 @@ export class OrderComponent implements OnInit {
         console.log('Order details loaded:', orders);
         this.isLoading = false;
         if (orders && orders.length > 0) {
-          // CHANGED: Now assign the entire array directly
           this.userOrders = orders;
-          // Optionally set the first order as current order
           this.currentOrder = orders[0];
         } else {
           this.userOrders = [];
           this.currentOrder = null;
           this.error = 'No orders found for this user.';
         }
-        // if (order) {
-        //   // Since backend returns a single OrderDTO, wrap it in an array
-        //   this.userOrders = [order];
-        //   this.currentOrder = order;
-        // } else {
-        //   this.userOrders = [];
-        //   this.currentOrder = null;
-        //   this.error = 'No orders found for this user.';
-        // }
       },
       error: (error) => {
         console.error('Error loading order details:', error);
@@ -423,7 +424,7 @@ export class OrderComponent implements OnInit {
             productId: item.productId,
             productName: item.productName,
             quantity: item.quantity,
-            price: item.unitPrice,
+            unitPrice: item.unitPrice,
             imageUrl: item.imageUrl
           }));
         }
@@ -466,7 +467,7 @@ export class OrderComponent implements OnInit {
         this.checkoutService.setCheckoutSuccess(1);
         alert('Order created successfully!');
         this.resetNewOrderForm();
-        this.loadUserData(); // Refresh data after creating order
+        this.loadUserData();
         this.activeTab = 'my-orders';
         this.clearCart();
       },
@@ -501,7 +502,7 @@ export class OrderComponent implements OnInit {
     this.orderService.updateOrderStatus(this.selectedOrderId, this.newStatus).subscribe({
       next: (updatedOrder) => {
         alert('Order status updated successfully!');
-        this.loadUserData(); // Refresh data after updating status
+        this.loadUserData();
         this.resetStatusForm();
         this.isUpdatingStatus = false;
       },
@@ -517,7 +518,7 @@ export class OrderComponent implements OnInit {
     this.orderService.markOrderReady(orderId).subscribe({
       next: (updatedOrder) => {
         alert('Order marked as ready!');
-        this.loadUserData(); // Refresh data
+        this.loadUserData();
       },
       error: (error) => {
         console.error('Error marking order ready:', error);
@@ -540,7 +541,7 @@ export class OrderComponent implements OnInit {
   }
 
   calculateOrderTotal(order: OrderDTO): number {
-    return order.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return order.items.reduce((total, item) => total + (item.unitPrice * item.quantity), 0);
   }
 
   private resetNewOrderForm(): void {
@@ -565,7 +566,7 @@ export class OrderComponent implements OnInit {
   setActiveTab(tab: 'my-orders' | 'all-orders' | 'create'): void {
     this.activeTab = tab;
     if (tab === 'my-orders') {
-      this.loadUserData(); // Refresh orders when switching to my-orders tab
+      this.loadUserData();
     }
   }
 
@@ -579,7 +580,7 @@ export class OrderComponent implements OnInit {
       this.orderService.updateOrderStatus(orderId, 'CANCELLED').subscribe({
         next: (updatedOrder) => {
           alert('Order cancelled successfully!');
-          this.loadUserData(); // Refresh data after cancellation
+          this.loadUserData();
           this.closeOrderDetails();
         },
         error: (error) => {
@@ -590,7 +591,6 @@ export class OrderComponent implements OnInit {
     }
   }
 
-  // Helper method to check if user has any orders
   hasOrders(): boolean {
     return this.userOrders.length > 0;
   }
@@ -598,18 +598,34 @@ export class OrderComponent implements OnInit {
   getLatestOrder(): OrderDTO | null {
     return this.userOrders.length > 0 ? this.userOrders[this.userOrders.length - 1] : null;
   }
-// getSortedOrders(): OrderDTO[] {
-//     return [...this.userOrders].sort((a, b) => 
-//         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-//     );
-// }
-// getSortedOrders(): OrderDTO[] {
-//     return [...this.userOrders].sort((a, b) => 
-//       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-//     );
-//   }
-  // Get the user's order (single order)
+
+  getSortedOrders(): OrderDTO[] {
+    return [...this.userOrders].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+  }
+
   getUserOrder(): OrderDTO | null {
     return this.userOrders.length > 0 ? this.userOrders[0] : null;
+  }
+
+  shouldShowPayButton(order: OrderDTO): boolean {
+    return order.status !== 'CANCELLED' && 
+           order.status !== 'DELIVERED' && 
+           order.status !== 'PAID';
+  }
+
+  redirectToPayment(order: OrderDTO): void {
+    this.closeOrderDetails();
+    
+    this.router.navigate(['/payments'], { 
+      queryParams: { 
+        orderId: order.id,
+        amount: order.totalAmount,
+        redirectFrom: 'orders'
+      }
+    });
   }
 }

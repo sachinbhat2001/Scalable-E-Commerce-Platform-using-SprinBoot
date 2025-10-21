@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { PaymentService } from '../../services/payment.service';
 import { PaymentRequestDTO, PaymentResponseDTO } from '../../models/payment.model';
 
@@ -27,12 +28,35 @@ export class PaymentComponent implements OnInit {
   serviceHealth: string = 'Unknown';
 
   isProcessing = false;
-  activeTab: 'process' | 'history' | 'details' = 'process';
+  activeTab: 'process' | 'details' = 'process';
 
-  constructor(private paymentService: PaymentService) { }
+  constructor(
+    private paymentService: PaymentService,
+    private route: ActivatedRoute
+  ) { }
 
   ngOnInit(): void {
     this.checkServiceHealth();
+    this.handleOrderRedirect();
+  }
+
+  private handleOrderRedirect(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['orderId']) {
+        this.paymentRequest.orderId = +params['orderId'];
+        
+        if (params['amount']) {
+          this.paymentRequest.amount = +params['amount'];
+        }
+        
+        this.activeTab = 'process';
+        
+        console.log('Pre-filled payment form with order:', {
+          orderId: this.paymentRequest.orderId,
+          amount: this.paymentRequest.amount
+        });
+      }
+    });
   }
 
   checkServiceHealth(): void {
@@ -116,7 +140,7 @@ export class PaymentComponent implements OnInit {
       return false;
     }
 
-    if (this.paymentRequest.paymentMethod === 'CREDIT_CARD') {
+    if (this.paymentRequest.paymentMethod === 'CREDIT_CARD' || this.paymentRequest.paymentMethod === 'DEBIT_CARD') {
       if (!this.paymentRequest.cardNumber || !this.paymentRequest.expiryDate || !this.paymentRequest.cvv) {
         alert('Please fill in all card details');
         return false;
@@ -149,7 +173,7 @@ export class PaymentComponent implements OnInit {
     }
   }
 
-  setActiveTab(tab: 'process' | 'history' | 'details'): void {
+  setActiveTab(tab: 'process' | 'details'): void {
     this.activeTab = tab;
   }
 }

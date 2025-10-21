@@ -5,31 +5,37 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
 
-    public static final String PAYMENT_EXCHANGE = "payment_exchange";
-    public static final String PAYMENT_SUCCESS_QUEUE = "payment_success_queue";
-    public static final String PAYMENT_ROUTING_KEY = "payment.success";
+    @Value("${rabbitmq.exchange.name:payment_exchange}")
+    private String exchangeName;
+
+    @Value("${rabbitmq.queue.name:payment_success_queue}")
+    private String queueName;
+
+    @Value("${rabbitmq.routing.key:payment.success}")
+    private String routingKey;
 
     @Bean
     public TopicExchange paymentExchange() {
-        return new TopicExchange(PAYMENT_EXCHANGE);
+        return new TopicExchange(exchangeName);
     }
 
     @Bean
     public Queue paymentSuccessQueue() {
-        return new Queue(PAYMENT_SUCCESS_QUEUE, true);
+        return new Queue(queueName, true); // durable queue
     }
 
     @Bean
     public Binding paymentSuccessBinding(Queue paymentSuccessQueue, TopicExchange paymentExchange) {
         return BindingBuilder.bind(paymentSuccessQueue)
                 .to(paymentExchange)
-                .with(PAYMENT_ROUTING_KEY);
+                .with(routingKey);
     }
 
     @Bean

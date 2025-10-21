@@ -162,44 +162,117 @@ public class CartServiceImpl implements CartService{
 	}
 	@Override
 	public void checkout(Long userId) {
-		// 1. Fetch cart
+	    System.out.println("=== CART SERVICE CHECKOUT STARTED ===");
+	    
+	    // 1. Fetch cart
 	    CartEntity cart = cartRepository.findByUserIdWithItems(userId)
 	        .orElseThrow(() -> new RuntimeException("Cart not found for userId: " + userId));
+
+	    System.out.println("Cart items before checkout: " + cart.getItems().size());
+	    System.out.println("Cart total: " + cart.getTotalAmount());
 
 	    // 2. Check if cart is empty
 	    if (cart.getItems().isEmpty()) {
 	        throw new RuntimeException("Cannot checkout an empty cart");
 	    }
 	    
-	    else {
-	    	 
-	    	OrderDTO orderDto=cartOrder(cart);
-	    	webClientService.post(orderUrl, orderDto, String.class);
-	    	
+	    // 3. Create order from cart
+	    OrderDTO orderDto = cartOrder(cart);
+	    System.out.println("OrderDTO created: " + orderDto.getItems().size() + " items, total: " + orderDto.getTotalAmount());
+	    
+	    // 4. Call order service to create order
+	    try {
+	        System.out.println("Calling order service at: " + orderUrl);
+	        OrderDTO createdOrder = webClientService.post(orderUrl, orderDto, OrderDTO.class);
+	        System.out.println("Order created successfully: " + createdOrder.getId());
+	    } catch (Exception e) {
+	        System.out.println("ERROR creating order: " + e.getMessage());
+	        e.printStackTrace();
+	        throw new RuntimeException("Failed to create order: " + e.getMessage());
 	    }
 
-	    // 3. Send order details to a message queue or process order
-	    // Example: rabbitTemplate.convertAndSend("order.exchange", "order.routingKey", cart);
-
-	    // 4. Clear cart items after checkout
+	    // 5. Clear cart items after successful order creation
 	    cart.getItems().clear();
 	    cart.setTotalAmount(BigDecimal.ZERO);
 	    
-	    
-
-	    // 5. Save cart
-	    
+	    // 6. Save cleared cart
 	    cartRepository.save(cart);
-	   
-	    
-	  
-		
+	    System.out.println("Cart cleared after checkout");
+	    System.out.println("=== CART SERVICE CHECKOUT COMPLETED ===");
 	}
+	
+//	@Override
+//	public void checkout(Long userId) {
+//	    // 1. Fetch cart
+//	    CartEntity cart = cartRepository.findByUserIdWithItems(userId)
+//	        .orElseThrow(() -> new RuntimeException("Cart not found for userId: " + userId));
+//
+//	    // 2. Check if cart is empty
+//	    if (cart.getItems().isEmpty()) {
+//	        throw new RuntimeException("Cannot checkout an empty cart");
+//	    }
+//	    
+//	    // 3. Create order from cart
+//	    OrderDTO orderDto = cartOrder(cart);
+//	    
+//	    // 4. Call order service to create order
+//	    try {
+//	        OrderDTO createdOrder = webClientService.post(orderUrl, orderDto, OrderDTO.class);
+//	        System.out.println("Order created successfully: " + createdOrder.getId());
+//	    } catch (Exception e) {
+//	        throw new RuntimeException("Failed to create order: " + e.getMessage());
+//	    }
+//
+//	    // 5. Clear cart items after successful order creation
+//	    cart.getItems().clear();
+//	    cart.setTotalAmount(BigDecimal.ZERO);
+//	    
+//	    // 6. Save cleared cart
+//	    cartRepository.save(cart);
+//	}
+
+//	@Override
+//	public void checkout(Long userId) {
+//		// 1. Fetch cart
+//	    CartEntity cart = cartRepository.findByUserIdWithItems(userId)
+//	        .orElseThrow(() -> new RuntimeException("Cart not found for userId: " + userId));
+//
+//	    // 2. Check if cart is empty
+//	    if (cart.getItems().isEmpty()) {
+//	        throw new RuntimeException("Cannot checkout an empty cart");
+//	    }
+//	    
+//	    else {
+//	    	 
+//	    	OrderDTO orderDto=cartOrder(cart);
+//	    	webClientService.post(orderUrl, orderDto, String.class);
+//	    	
+//	    }
+//
+//	    // 3. Send order details to a message queue or process order
+//	    // Example: rabbitTemplate.convertAndSend("order.exchange", "order.routingKey", cart);
+//
+//	    // 4. Clear cart items after checkout
+//	    cart.getItems().clear();
+//	    cart.setTotalAmount(BigDecimal.ZERO);
+//	    
+//	    
+//
+//	    // 5. Save cart
+//	    
+//	    cartRepository.save(cart);
+//	   
+//	    
+//	  
+//		
+//	}
 	private OrderDTO cartOrder(CartEntity cart) {
 		OrderDTO orderdto=new OrderDTO();
 		orderdto.setUserId(cart.getUserId());
 		orderdto.setStatus("PENDING");
 		orderdto.setTotalAmount(cart.getTotalAmount());
+		orderdto.setShippingAddress("Default Address"); // You might want to get this from user service
+	    orderdto.setPaymentMethod("CREDIT_CARD");
 		
 		List<OrderItemDTO> itemDto = cart.getItems().stream().map(cartItem -> {
 			OrderItemDTO dto = new OrderItemDTO();
@@ -219,3 +292,186 @@ public class CartServiceImpl implements CartService{
     
     
 }
+//package com.example.cart_service.service;
+//
+//import com.example.cart_service.model.CartDto;
+//import com.example.cart_service.model.CartDto.CartItemDTO;
+//import com.example.cart_service.model.CartEntity;
+//import com.example.cart_service.model.CartItemEntity;
+//import com.example.cart_service.repository.CartRepository;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.stereotype.Service;
+//
+//import java.math.BigDecimal;
+//import java.util.Optional;
+//
+//@Service
+//public class CartServiceImpl implements CartService {
+//
+//    @Autowired
+//    private CartRepository cartRepository;
+//
+//    @Override
+//    public CartDTO getCart(Long userId) {
+//        Optional<CartEntity> cartEntity = cartRepository.findByUserId(userId);
+//        if (cartEntity.isPresent()) {
+//            return convertToDto(cartEntity.get());
+//        } else {
+//            // Create a new cart if none exists
+//            CartEntity newCart = new CartEntity();
+//            newCart.setUserId(userId);
+//            newCart.setTotalAmount(BigDecimal.ZERO);
+//            CartEntity savedCart = cartRepository.save(newCart);
+//            return convertToDto(savedCart);
+//        }
+//    }
+//
+//    @Override
+//    public CartDto addItem(Long userId, CartItemDTO itemDTO) {
+//        CartEntity cart = cartRepository.findByUserId(userId)
+//                .orElseGet(() -> {
+//                    CartEntity newCart = new CartEntity();
+//                    newCart.setUserId(userId);
+//                    newCart.setTotalAmount(BigDecimal.ZERO);
+//                    return cartRepository.save(newCart);
+//                });
+//
+//        // Validate that unitPrice is not null
+//        if (itemDTO.getUnitPrice() == null) {
+//            throw new RuntimeException("Unit price cannot be null for product: " + itemDTO.getProductName());
+//        }
+//
+//        // Check if item already exists in cart
+//        Optional<CartItemEntity> existingItem = cart.getItems().stream()
+//                .filter(item -> item.getProductId().equals(itemDTO.getProductId()))
+//                .findFirst();
+//
+//        if (existingItem.isPresent()) {
+//            // Update existing item
+//            CartItemEntity item = existingItem.get();
+//            item.setQuantity(item.getQuantity() + itemDTO.getQuantity());
+//            // Recalculate total price for this item
+//            BigDecimal itemTotal = itemDTO.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+//            item.setTotalPrice(itemTotal);
+//        } else {
+//            // Add new item
+//            CartItemEntity newItem = new CartItemEntity();
+//            newItem.setProductId(itemDTO.getProductId());
+//            newItem.setProductName(itemDTO.getProductName());
+//            newItem.setQuantity(itemDTO.getQuantity());
+//            newItem.setUnitPrice(itemDTO.getUnitPrice());
+//            
+//            // Calculate total price for this item
+//            BigDecimal itemTotal = itemDTO.getUnitPrice().multiply(BigDecimal.valueOf(itemDTO.getQuantity()));
+//            newItem.setTotalPrice(itemTotal);
+//            
+//            newItem.setCart(cart);
+//            cart.getItems().add(newItem);
+//        }
+//
+//        // Recalculate cart total
+//        BigDecimal cartTotal = cart.getItems().stream()
+//                .map(CartItemEntity::getTotalPrice)
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//        cart.setTotalAmount(cartTotal);
+//
+//        CartEntity savedCart = cartRepository.save(cart);
+//        return convertToDto(savedCart);
+//    }
+//
+//    @Override
+//    public CartDto updateItemQuantity(Long userId, Long productId, Integer quantity) {
+//        CartEntity cart = cartRepository.findByUserId(userId)
+//                .orElseThrow(() -> new RuntimeException("Cart not found for user: " + userId));
+//
+//        CartItemEntity item = cart.getItems().stream()
+//                .filter(cartItem -> cartItem.getProductId().equals(productId))
+//                .findFirst()
+//                .orElseThrow(() -> new RuntimeException("Item not found in cart: " + productId));
+//
+//        if (quantity <= 0) {
+//            cart.getItems().remove(item);
+//        } else {
+//            item.setQuantity(quantity);
+//            // Recalculate item total price
+//            BigDecimal itemTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(quantity));
+//            item.setTotalPrice(itemTotal);
+//        }
+//
+//        // Recalculate cart total
+//        BigDecimal cartTotal = cart.getItems().stream()
+//                .map(CartItemEntity::getTotalPrice)
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//        cart.setTotalAmount(cartTotal);
+//
+//        CartEntity savedCart = cartRepository.save(cart);
+//        return convertToDto(savedCart);
+//    }
+//
+//    @Override
+//    public CartDto removeItem(Long userId, Long productId) {
+//        CartEntity cart = cartRepository.findByUserId(userId)
+//                .orElseThrow(() -> new RuntimeException("Cart not found for user: " + userId));
+//
+//        boolean removed = cart.getItems().removeIf(item -> item.getProductId().equals(productId));
+//
+//        if (!removed) {
+//            throw new RuntimeException("Item not found in cart: " + productId);
+//        }
+//
+//        // Recalculate cart total
+//        BigDecimal cartTotal = cart.getItems().stream()
+//                .map(CartItemEntity::getTotalPrice)
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//        cart.setTotalAmount(cartTotal);
+//
+//        CartEntity savedCart = cartRepository.save(cart);
+//        return convertToDto(savedCart);
+//    }
+//
+//    @Override
+//    public String checkout(Long userId) {
+//        CartEntity cart = cartRepository.findByUserId(userId)
+//                .orElseThrow(() -> new RuntimeException("Cart not found for user: " + userId));
+//
+//        if (cart.getItems().isEmpty()) {
+//            throw new RuntimeException("Cannot checkout an empty cart");
+//        }
+//
+//        // Here you would typically:
+//        // 1. Create an order
+//        // 2. Process payment
+//        // 3. Clear the cart
+//        // 4. Return order ID
+//
+//        // For now, let's just clear the cart and return a success message
+//        cart.getItems().clear();
+//        cart.setTotalAmount(BigDecimal.ZERO);
+//        cartRepository.save(cart);
+//
+//        // In a real application, you would return the order ID
+//        // For now, return a dummy order ID
+//        return "Order created successfully with ID: ORD" + System.currentTimeMillis();
+//    }
+//
+//    private CartDto convertToDto(CartEntity cartEntity) {
+//        CartDto cartDto = new CartDto();
+//        cartDto.setId(cartEntity.getId());
+//        cartDto.setUserId(cartEntity.getUserId());
+//        cartDto.setTotalPrice(cartEntity.getTotalAmount());
+//
+//        // Convert items
+//        cartEntity.getItems().forEach(itemEntity -> {
+//            CartItemDTO itemDto = new CartItemDTO();
+//            itemDto.setId(itemEntity.getId());
+//            itemDto.setProductId(itemEntity.getProductId());
+//            itemDto.setProductName(itemEntity.getProductName());
+//            itemDto.setQuantity(itemEntity.getQuantity());
+//            itemDto.setUnitPrice(itemEntity.getUnitPrice());
+//            itemDto.setTotalPrice(itemEntity.getTotalPrice());
+//            cartDto.getItems().add(itemDto);
+//        });
+//
+//        return cartDto;
+//    }
+//}

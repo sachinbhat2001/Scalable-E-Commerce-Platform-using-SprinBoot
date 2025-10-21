@@ -42,6 +42,9 @@ public class OrderEntity {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+    
+    private String shippingAddress;
+    private String paymentMethod;
 
 	
 }

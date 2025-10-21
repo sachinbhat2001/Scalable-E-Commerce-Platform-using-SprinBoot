@@ -74,3 +74,39 @@ public class CartDto {
 		
 	}
 }
+
+//
+//package com.example.cart_service.model;
+//
+//import lombok.Data;
+//import java.math.BigDecimal;
+//import java.util.ArrayList;
+//import java.util.List;
+//
+//@Data
+//public class CartDto {
+//    private Long id;
+//    private Long userId;
+//    private BigDecimal totalPrice;
+//    private List<CartItemDTO> items = new ArrayList<>();
+//
+//    @Data
+//    public static class CartItemDTO {
+//        private Long id;
+//        private Long productId;
+//        private String productName;
+//        private Integer quantity;
+//        private BigDecimal unitPrice;  // Price per unit
+//        private BigDecimal totalPrice; // unitPrice * quantity
+//        
+//        // Ensure unitPrice is never null
+//        public BigDecimal getUnitPrice() {
+//            return unitPrice != null ? unitPrice : BigDecimal.ZERO;
+//        }
+//        
+//        // Ensure totalPrice is never null
+//        public BigDecimal getTotalPrice() {
+//            return totalPrice != null ? totalPrice : BigDecimal.ZERO;
+//        }
+//    }
+//}

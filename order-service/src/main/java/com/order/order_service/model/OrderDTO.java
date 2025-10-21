@@ -11,10 +11,13 @@ import lombok.Setter;
 
 @Data
 public class OrderDTO {
-//    private Long id;
+	
+	private Long id;
     private Long userId;
     private List<OrderItemDTO> items = new ArrayList<>();
     private BigDecimal totalAmount;
+    private String shippingAddress;
+    private String paymentMethod;
     private String status;
     private LocalDateTime createdAt;
 	

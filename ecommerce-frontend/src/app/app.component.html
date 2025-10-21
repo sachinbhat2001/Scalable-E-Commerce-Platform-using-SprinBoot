@@ -1,0 +1,70 @@
+<div class="container">
+  <h2>User Management</h2>
+  
+  <div class="card mb-4">
+    <div class="card-header">
+      {{ isEditing ? 'Edit User' : 'Create User' }}
+    </div>
+    <div class="card-body">
+      <form (ngSubmit)="isEditing ? updateUser() : createUser()">
+        <div class="row">
+          <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="Username" 
+                   [(ngModel)]="selectedUser.username" name="username" required>
+          </div>
+          <div class="col-md-6">
+            <input type="email" class="form-control" placeholder="Email" 
+                   [(ngModel)]="selectedUser.email" name="email" required>
+          </div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="First Name" 
+                   [(ngModel)]="selectedUser.firstName" name="firstName" required>
+          </div>
+          <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="Last Name" 
+                   [(ngModel)]="selectedUser.lastName" name="lastName" required>
+          </div>
+        </div>
+        <div class="mt-2">
+          <button type="submit" class="btn btn-primary me-2">
+            {{ isEditing ? 'Update' : 'Create' }}
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="cancelEdit()" *ngIf="isEditing">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Users List</div>
+    <div class="card-body">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Name</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users">
+            <td>{{ user.id }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.firstName }} {{ user.lastName }}</td>
+            <td>
+              <button class="btn btn-warning btn-sm me-1" (click)="editUser(user)">Edit</button>
+              <button class="btn btn-danger btn-sm" (click)="deleteUser(user.id!)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
